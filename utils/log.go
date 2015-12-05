@@ -19,10 +19,12 @@ func InitLog() {
 	Log = log.New()
 	LogWriter = Log.Writer()
 	Log.Formatter = new(log.JSONFormatter)
-	Log.Hooks.Add(lfshook.NewHook(lfshook.PathMap{
-		log.InfoLevel:  "log/info.log",
-		log.ErrorLevel: "log/error.log",
-	}))
+	if os.Getenv("MODE") != "test" {
+		Log.Hooks.Add(lfshook.NewHook(lfshook.PathMap{
+			log.InfoLevel:  "log/info.log",
+			log.ErrorLevel: "log/error.log",
+		}))
+	}
 }
 
 //InitLogTest system

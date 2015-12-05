@@ -5,19 +5,17 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/cheersapp/matchserver/utils"
 	"github.com/gorilla/websocket"
 )
 
 const (
 	// Time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
-
 	// Time allowed to read the next pong message from the peer.
 	pongWait = 60 * time.Second
-
 	// Send pings to peer with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
-
 	// Maximum message size allowed from peer.
 	maxMessageSize = 512
 )
@@ -32,19 +30,22 @@ var upgrader = websocket.Upgrader{
 type connection struct {
 	// The websocket connection.
 	ws *websocket.Conn
-
 	// Buffered channel of outbound messages.
 	send chan []byte
-
+	// channel for inbound messages
 	receive chan []byte
-
+	// name of the connection
 	name string
+	// actor reference
+	actorRef *actor
 }
 
 // readPump pumps messages from the websocket connection to the hub.
 func (c *connection) readPump() {
 	defer func() {
-		System.unregister <- c
+		if c.actorRef != nil {
+			c.actorRef.removeConnection <- c
+		}
 		c.ws.Close()
 	}()
 	c.ws.SetReadLimit(maxMessageSize)
@@ -69,50 +70,49 @@ func (c *connection) write(mt int, payload []byte) error {
 func (c *connection) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
+		utils.Log.Infof("Finishing connection: %s", c.name)
 		ticker.Stop()
 		c.ws.Close()
 	}()
 	for {
 		select {
-		case message, ok := <-c.send:
-			if !ok {
-				c.write(websocket.CloseMessage, []byte{})
-				return
-			}
-			if err := c.write(websocket.TextMessage, message); err != nil {
-				return
-			}
 		case <-ticker.C:
 			if err := c.write(websocket.PingMessage, []byte{}); err != nil {
 				return
 			}
-		}
-	}
-}
-
-func (c *connection) run() {
-	for {
-		message, more := <-c.receive
-		if more {
-			postStrokeVar := postStroke{}
-			json.Unmarshal(message, &postStrokeVar)
+		case message, more := <-c.send: // channel used to finish the connection when it's closed
+			utils.Log.Infof("Into send channel for: %s -- more?: %t", c.name, more)
+			if more {
+				if err := c.write(websocket.TextMessage, message); err != nil {
+					return
+				}
+			} else {
+				utils.Log.Infof("Closing websocket: %s", c.name)
+				c.write(websocket.CloseMessage, []byte{})
+				return
+			}
+		case message := <-c.receive:
 			register := registerActor{
-				username: c.name,
+				name:     c.name,
 				response: make(chan *actor),
 			}
-			searcherVar.register <- &register
-			actorVar := <-register.response
-			actorVar.strokes <- &postStrokeVar
+			utils.Log.Infof("Creating actor: %s", register.name)
+			SearcherVar.register <- &register
+			actorRef := <-register.response
+			actorRef.addConnection <- c
+			//creates the postStroke
+			postStrokeVar := PostStroke{}
+			json.Unmarshal(message, &postStrokeVar)
+			postStrokeVar.userID = actorRef.name
+			actorRef.strokes <- &postStrokeVar
 			for {
-				response, more := <-actorVar.responses
+				response, more := <-actorRef.responses
 				if more {
 					c.send <- response
 				} else {
 					break
 				}
 			}
-		} else {
-			return
 		}
 	}
 }

@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/cheersapp/matchserver/utils"
+
 	"github.com/gorilla/mux"
 )
 
@@ -22,8 +24,7 @@ func ServeWS(w http.ResponseWriter, r *http.Request) {
 		ws:      ws,
 		name:    username,
 	}
-	System.register <- c
+	utils.Log.Infof("Creating connection: %s", username)
 	go c.writePump()
-	go c.run()
 	c.readPump()
 }

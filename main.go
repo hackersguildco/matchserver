@@ -16,7 +16,6 @@ func main() {
 	initEnv()
 	utils.InitLog()
 	models.InitDB()
-	go ws.System.Run()
 	router := mux.NewRouter()
 	router.HandleFunc("/ws/{username}", ws.ServeWS)
 	http.Handle("/", router)

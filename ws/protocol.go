@@ -1,16 +1,17 @@
 package ws
 
 type searchActor struct {
-	username string
+	name     string
 	response chan *actor
 }
 
 type registerActor struct {
-	username string
+	name     string
 	response chan *actor
 }
 
-type postStroke struct {
-	body string
-	loc  []float64
+type PostStroke struct {
+	userID string
+	Info   string
+	Loc    []float64
 }

@@ -1,5 +1,7 @@
 package ws
 
+import "github.com/cheersapp/matchserver/utils"
+
 type searcher struct {
 	directory  map[string]*actor
 	search     chan *searchActor
@@ -9,10 +11,10 @@ type searcher struct {
 
 // Searcher for the actors on the system
 // TODO put this in a better place
-var searcherVar = searcher{
+var SearcherVar = searcher{
 	directory:  make(map[string]*actor),
-	search:     make(chan *searchActor),
-	register:   make(chan *registerActor),
+	search:     make(chan *searchActor, 256),
+	register:   make(chan *registerActor, 256),
 	unregister: make(chan string, 256),
 }
 
@@ -20,36 +22,25 @@ func (s *searcher) Run() {
 	for {
 		select {
 		case search := <-s.search:
-			actorVar, _ := s.directory[search.username]
-			search.response <- actorVar
+			actorRef, _ := s.directory[search.name]
+			search.response <- actorRef
 			close(search.response)
 		case register := <-s.register:
 			// creates or find an actor
-			actorVar, ok := s.directory[register.username]
+			actorRef, ok := s.directory[register.name]
+			utils.Log.Infof("Looking for actor: %s --- %v", register.name, actorRef)
 			if !ok {
-				actorVar = createActor(register.username)
-				go actorVar.run()
-				s.directory[register.username] = actorVar
+				actorRef = createActor(register.name)
+				go actorRef.run()
+				go actorRef.startTimer()
+				s.directory[register.name] = actorRef
 			}
-			register.response <- actorVar
+			register.response <- actorRef
 			close(register.response)
 		case username := <-s.unregister:
 			if _, ok := s.directory[username]; ok {
 				delete(s.directory, username)
 			}
 		}
-	}
-}
-
-func createActor(name string) *actor {
-	return &actor{
-		name:        name,
-		connections: []*connection{},
-		systemHub:   &System,
-		strokes:     make(chan *postStroke),
-		responses:   make(chan []byte),
-		nearUsers:   make(chan []string, 256),
-		ping:        make(chan *actor),
-		pong:        make(chan *actor),
 	}
 }
