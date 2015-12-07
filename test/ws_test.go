@@ -79,6 +79,30 @@ var _ = Describe("WS Behavior", func() {
 			postStrokeUser3, postStrokeUser3Byte = createPostStroke(username3, []float64{-79.38066843, 43.65483486})
 		})
 
+		It("should do match", func() {
+			wsConnUser1.WriteMessage(websocket.TextMessage, postStrokeUser1Byte)
+			wsConnUser2.WriteMessage(websocket.TextMessage, postStrokeUser2Byte)
+			wsConnUser3.WriteMessage(websocket.TextMessage, postStrokeUser3Byte)
+			matchOtherTwo(wsConnUser1, postStrokeUser2.Info, postStrokeUser3.Info)
+			matchOtherTwo(wsConnUser2, postStrokeUser1.Info, postStrokeUser3.Info)
+			matchOtherTwo(wsConnUser3, postStrokeUser2.Info, postStrokeUser1.Info)
+		})
+
+		It("a1 and a2 should match, 3 shouldn't match", func() {
+			wsConnUser1.WriteMessage(websocket.TextMessage, postStrokeUser1Byte)
+			wsConnUser2.WriteMessage(websocket.TextMessage, postStrokeUser2Byte)
+			time.Sleep(3 * time.Second)
+			wsConnUser3.WriteMessage(websocket.TextMessage, postStrokeUser3Byte)
+			_, resp1, err1 := wsConnUser1.ReadMessage()
+			_, resp2, err2 := wsConnUser2.ReadMessage()
+			Expect(err1).To(BeNil())
+			Expect(string(resp1)).To(BeEquivalentTo(postStrokeUser2.Info))
+			Expect(err2).To(BeNil())
+			Expect(string(resp2)).To(BeEquivalentTo(postStrokeUser1.Info))
+			_, _, err3 := wsConnUser3.ReadMessage()
+			Expect(err3).NotTo(BeNil())
+		})
+
 	})
 
 })

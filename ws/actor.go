@@ -8,13 +8,23 @@ import (
 
 const timeAlive = 3
 
+type actorStatus int
+
+const (
+	_ = iota
+	alive
+	dead
+)
+
 // Represents an user in the system that is doing a cheers
 type actor struct {
 	name             string
+	status           actorStatus
 	info             []byte
 	timer            *time.Timer
 	connections      []*connection
-	pongedActors     map[*actor]bool
+	matchedActors    map[*actor]bool
+	sentActors       map[*actor]bool
 	addConnection    chan *connection
 	removeConnection chan *connection
 	strokes          chan *PostStroke
@@ -28,10 +38,12 @@ type actor struct {
 func createActor(name string) *actor {
 	return &actor{
 		name:             name,
+		status:           alive,
 		connections:      []*connection{},
 		addConnection:    make(chan *connection),
 		removeConnection: make(chan *connection),
-		pongedActors:     make(map[*actor]bool),
+		matchedActors:    make(map[*actor]bool),
+		sentActors:       make(map[*actor]bool),
 		strokes:          make(chan *PostStroke),
 		responses:        make(chan []byte),
 		nearUsers:        make(chan []string, 256),
@@ -68,21 +80,23 @@ func (a *actor) run() {
 					SearcherVar.search <- &searchActorVar
 					actorRef := <-searchActorVar.response
 					actorRef.ping <- a
-					a.pongedActors[actorRef] = false
+					a.matchedActors[actorRef] = false
 				}
 			}
 		case actorPing, more := <-a.ping:
-			if more {
-				if _, ok := a.pongedActors[actorPing]; !ok {
-					actorPing.pong <- a
-					a.broadcast(actorPing.info)
-				}
+			if _, ok := a.matchedActors[actorPing]; more && !ok {
+				utils.Log.Infof("%s received a PING from %s", a.name, actorPing.name)
+				a.matchedActors[actorPing] = false
+				a.broadcast(actorPing)
+				actorPing.pong <- a
 			}
 		case actorPong, more := <-a.pong:
 			if more {
-				a.pongedActors[actorPong] = true
+				utils.Log.Infof("%s received a PONG from %s", a.name, actorPong.name)
+				utils.Log.Infof("Dead of %s depends on %s", actorPong.name, a.name)
+				a.matchedActors[actorPong] = true
 				actorPong.timer.Stop()
-				a.broadcast(actorPong.info)
+				a.broadcast(actorPong)
 			}
 		}
 	}
@@ -107,10 +121,18 @@ func (a *actor) persist(postStrokeVar *PostStroke) {
 }
 
 // sends data to all connectios
-func (a *actor) broadcast(info []byte) {
-	for _, conn := range a.connections {
-		conn.send <- info
+func (a *actor) broadcast(actorMatched *actor) {
+	ok := a.sentActors[actorMatched]
+	sent := false
+	if !ok {
+		sent = true
+		a.sentActors[actorMatched] = true
+		for _, conn := range a.connections {
+			utils.Log.Infof("Sending to the connection %s the info %s of the actor %s", a.name, string(actorMatched.info), actorMatched.name)
+			conn.send <- actorMatched.info
+		}
 	}
+	utils.Log.Infof("Sent? %t, %s broadcasting %s, found: %t, on connections: %d", sent, a.name, actorMatched.name, ok, len(a.connections))
 }
 
 // removes a connection
@@ -126,17 +148,20 @@ func (a *actor) removeConnectionBy(conn *connection) {
 // finish an actor
 func (a *actor) die() {
 	// kills the referenced actors
-	utils.Log.Infof("Actor dying: %s -- with %d connections", a.name, len(a.connections))
-	close(a.responses)
-	for actorRef, ponged := range a.pongedActors {
-		if ponged {
-			actorRef.poisonPill <- true
+	if a.status == alive {
+		a.status = dead
+		utils.Log.Infof("Actor dying: %s -- with %d connections", a.name, len(a.connections))
+		close(a.responses)
+		for actorRef, ponged := range a.matchedActors {
+			if ponged {
+				actorRef.poisonPill <- true
+			}
 		}
+		// closes all the actor connections
+		for _, conn := range a.connections {
+			utils.Log.Infof("Closing connection: %s", conn.name)
+			conn.poisonPill <- true
+		}
+		SearcherVar.unregister <- a.name
 	}
-	// closes all the actor connections
-	for _, conn := range a.connections {
-		utils.Log.Infof("Closing connection: %s", conn.name)
-		close(conn.send)
-	}
-	SearcherVar.unregister <- a.name
 }

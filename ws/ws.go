@@ -18,12 +18,7 @@ func ServeWS(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	c := &connection{
-		send:    make(chan []byte, 256),
-		receive: make(chan []byte, 256),
-		ws:      ws,
-		name:    username,
-	}
+	c := createConnection(username, ws)
 	utils.Log.Infof("Creating connection: %s", username)
 	go c.writePump()
 	c.readPump()
