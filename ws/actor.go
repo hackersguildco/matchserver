@@ -27,7 +27,7 @@ type actor struct {
 	sentActors       map[*actor]bool
 	addConnection    chan *connection
 	removeConnection chan *connection
-	strokes          chan *PostStroke
+	strokes          chan *postStroke
 	nearUsers        chan []string
 	responses        chan []byte
 	ping             chan *actor
@@ -35,6 +35,7 @@ type actor struct {
 	poisonPill       chan bool
 }
 
+// inits an actor
 func createActor(name string) *actor {
 	return &actor{
 		name:             name,
@@ -44,7 +45,7 @@ func createActor(name string) *actor {
 		removeConnection: make(chan *connection),
 		matchedActors:    make(map[*actor]bool),
 		sentActors:       make(map[*actor]bool),
-		strokes:          make(chan *PostStroke),
+		strokes:          make(chan *postStroke),
 		responses:        make(chan []byte),
 		nearUsers:        make(chan []string, 256),
 		ping:             make(chan *actor, 256),
@@ -53,15 +54,14 @@ func createActor(name string) *actor {
 	}
 }
 
+// run the actor that represents the user
 func (a *actor) run() {
 	//TODO close resources
 	utils.Log.Infof("Running actor: %s", a.name)
 	for {
 		select {
-		case _, more := <-a.poisonPill:
-			if more {
-				a.die()
-			}
+		case <-a.poisonPill:
+			a.die()
 		case conn := <-a.addConnection:
 			a.connections = append(a.connections, conn)
 		case conn := <-a.removeConnection:
@@ -77,7 +77,7 @@ func (a *actor) run() {
 						name:     u,
 						response: make(chan *actor),
 					}
-					SearcherVar.search <- &searchActorVar
+					searcherVar.search <- &searchActorVar
 					actorRef := <-searchActorVar.response
 					actorRef.ping <- a
 					a.matchedActors[actorRef] = false
@@ -110,9 +110,9 @@ func (a *actor) startTimer() {
 }
 
 // sends the persist message
-func (a *actor) persist(postStrokeVar *PostStroke) {
+func (a *actor) persist(postStrokeVar *postStroke) {
 	persistorVar := persistor{
-		persist:  make(chan *PostStroke),
+		persist:  make(chan *postStroke),
 		response: a.nearUsers,
 	}
 	a.info = []byte(postStrokeVar.Info)
@@ -162,6 +162,6 @@ func (a *actor) die() {
 			utils.Log.Infof("Closing connection: %s", conn.name)
 			conn.poisonPill <- true
 		}
-		SearcherVar.unregister <- a.name
+		searcherVar.unregister <- a.name
 	}
 }

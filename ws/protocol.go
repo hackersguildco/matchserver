@@ -10,7 +10,7 @@ type registerActor struct {
 	response chan *actor
 }
 
-type PostStroke struct {
+type postStroke struct {
 	userID string
 	Info   string
 	Loc    []float64

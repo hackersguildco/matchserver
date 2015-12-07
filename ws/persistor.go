@@ -16,25 +16,29 @@ const (
 )
 
 type persistor struct {
-	persist  chan *PostStroke
+	persist  chan *postStroke
 	response chan []string
 }
 
 func createPersistor(response chan []string) *persistor {
 	return &persistor{
-		persist:  make(chan *PostStroke),
+		persist:  make(chan *postStroke),
 		response: response,
+	}
+}
+
+func createStrokeFrom(postStrokeVar *postStroke) models.Stroke {
+	return models.Stroke{
+		Location:  postStrokeVar.Loc,
+		UserID:    postStrokeVar.userID,
+		CreatedAt: time.Now(),
 	}
 }
 
 func (p *persistor) run() {
 	defer close(p.persist)
 	postStrokeVar := <-p.persist
-	stroke := models.Stroke{
-		Location:  postStrokeVar.Loc,
-		UserID:    postStrokeVar.userID,
-		CreatedAt: time.Now(),
-	}
+	stroke := createStrokeFrom(postStrokeVar)
 	if err := p.save(&stroke); err != nil {
 		return
 	}

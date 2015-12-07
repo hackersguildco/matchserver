@@ -10,14 +10,19 @@ type searcher struct {
 }
 
 // Searcher for the actors on the system
-// TODO put this in a better place
-var SearcherVar = searcher{
+var searcherVar = searcher{
 	directory:  make(map[string]*actor),
 	search:     make(chan *searchActor, 256),
 	register:   make(chan *registerActor, 256),
 	unregister: make(chan string, 256),
 }
 
+// InitSearcher run it
+func InitSearcher() {
+	go searcherVar.Run()
+}
+
+// Run the searcher
 func (s *searcher) Run() {
 	for {
 		select {
@@ -31,9 +36,9 @@ func (s *searcher) Run() {
 			utils.Log.Infof("Looking for actor: %s --- %v", register.name, actorRef)
 			if !ok {
 				actorRef = createActor(register.name)
+				s.directory[register.name] = actorRef
 				go actorRef.run()
 				go actorRef.startTimer()
-				s.directory[register.name] = actorRef
 			}
 			register.response <- actorRef
 			close(register.response)

@@ -36,7 +36,7 @@ var _ = BeforeSuite(func() {
 	router.HandleFunc("/ws/{username}", ws.ServeWS)
 	http.Handle("/", router)
 	ts = httptest.NewServer(router)
-	go ws.SearcherVar.Run()
+	ws.InitSearcher()
 })
 
 var _ = AfterSuite(func() {

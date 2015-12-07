@@ -21,5 +21,6 @@ func ServeWS(w http.ResponseWriter, r *http.Request) {
 	c := createConnection(username, ws)
 	utils.Log.Infof("Creating connection: %s", username)
 	go c.writePump()
+	// go c.processMessages()
 	c.readPump()
 }
