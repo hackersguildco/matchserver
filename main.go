@@ -21,6 +21,7 @@ func main() {
 	http.Handle("/", router)
 	port := os.Getenv("PORT")
 	err := http.ListenAndServe(":"+port, nil)
+	ws.InitSearcher()
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}

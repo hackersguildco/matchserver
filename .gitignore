@@ -1,2 +1,3 @@
 .env_dev
 .env_test
+log/

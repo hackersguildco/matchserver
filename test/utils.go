@@ -5,13 +5,16 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"github.com/cheersapp/matchserver/ws"
-
 	. "github.com/onsi/gomega"
 )
 
-func createPostStroke(info string, loc []float64) (*ws.PostStroke, []byte) {
-	stroke := ws.PostStroke{
+type postStroke struct {
+	Info string
+	Loc  []float64
+}
+
+func createPostStroke(info string, loc []float64) (*postStroke, []byte) {
+	stroke := postStroke{
 		Info: info,
 		Loc:  loc,
 	}
