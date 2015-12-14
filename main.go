@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/cheersapp/matchserver/models"
-	"github.com/cheersapp/matchserver/utils"
-	"github.com/cheersapp/matchserver/ws"
+	"github.com/cheersappio/matchserver/models"
+	"github.com/cheersappio/matchserver/utils"
+	"github.com/cheersappio/matchserver/ws"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 )

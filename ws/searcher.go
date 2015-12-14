@@ -1,6 +1,6 @@
 package ws
 
-import "github.com/cheersapp/matchserver/utils"
+import "github.com/cheersappio/matchserver/utils"
 
 type searcher struct {
 	directory  map[string]*actor

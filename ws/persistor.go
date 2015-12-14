@@ -3,8 +3,8 @@ package ws
 import (
 	"time"
 
-	"github.com/cheersapp/matchserver/models"
-	"github.com/cheersapp/matchserver/utils"
+	"github.com/cheersappio/matchserver/models"
+	"github.com/cheersappio/matchserver/utils"
 	"gopkg.in/mgo.v2/bson"
 )
 

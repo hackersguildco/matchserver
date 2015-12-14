@@ -3,7 +3,7 @@ package models
 import (
 	"os"
 
-	"github.com/cheersapp/matchserver/utils"
+	"github.com/cheersappio/matchserver/utils"
 
 	"gopkg.in/mgo.v2"
 )
