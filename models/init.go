@@ -13,7 +13,7 @@ var (
 	Session           *mgo.Session
 )
 
-func InitDB() {
+func init() {
 	utils.Log.Infof("init DB: %s", os.Getenv("MONGO_URI"))
 	session, err := mgo.Dial(os.Getenv("MONGO_URI"))
 	if err != nil {

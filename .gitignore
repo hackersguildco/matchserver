@@ -1,3 +1,4 @@
 .env_dev
 .env_test
+.idea/
 log/

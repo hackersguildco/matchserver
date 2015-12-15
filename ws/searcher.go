@@ -10,17 +10,7 @@ type searcher struct {
 }
 
 // Searcher for the actors on the system
-var searcherVar = searcher{
-	directory:  make(map[string]*actor),
-	search:     make(chan *searchActor, 256),
-	register:   make(chan *registerActor, 256),
-	unregister: make(chan string, 256),
-}
-
-// InitSearcher run it
-func InitSearcher() {
-	go searcherVar.Run()
-}
+var searcherVar *searcher
 
 // Run the searcher
 func (s *searcher) Run() {

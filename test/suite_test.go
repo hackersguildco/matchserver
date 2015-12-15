@@ -9,7 +9,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/cheersappio/matchserver/models"
-	"github.com/cheersappio/matchserver/utils"
+	_ "github.com/cheersappio/matchserver/utils"
 	"github.com/cheersappio/matchserver/ws"
 
 	"github.com/gorilla/mux"
@@ -29,14 +29,10 @@ func Test(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	initEnv()
-	utils.InitLog()
-	models.InitDB()
 	router := mux.NewRouter()
 	router.HandleFunc("/ws/{username}", ws.ServeWS)
 	http.Handle("/", router)
 	ts = httptest.NewServer(router)
-	ws.InitSearcher()
 })
 
 var _ = AfterSuite(func() {
@@ -62,7 +58,7 @@ func cleanDB() {
 	models.StrokesCollection.RemoveAll(bson.M{})
 }
 
-func initEnv() {
+func init() {
 	path := ".env_test"
 	for i := 1; ; i++ {
 		if err := godotenv.Load(path); err != nil {
