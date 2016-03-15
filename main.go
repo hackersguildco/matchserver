@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/cheersappio/matchserver/Godeps/_workspace/src/github.com/gorilla/mux"
-	"github.com/cheersappio/matchserver/Godeps/_workspace/src/github.com/joho/godotenv"
-	_ "github.com/cheersappio/matchserver/models" // init
-	_ "github.com/cheersappio/matchserver/utils"
-	"github.com/cheersappio/matchserver/ws"
+	"github.com/gorilla/mux"
+	_ "github.com/hackersguildco/matchserver/models" // init
+	_ "github.com/hackersguildco/matchserver/utils"
+	"github.com/hackersguildco/matchserver/ws"
+	"github.com/joho/godotenv"
 )
 
 func main() {

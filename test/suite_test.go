@@ -8,9 +8,9 @@ import (
 
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/cheersappio/matchserver/models"
-	_ "github.com/cheersappio/matchserver/utils"
-	"github.com/cheersappio/matchserver/ws"
+	"github.com/hackersguildco/matchserver/models"
+	_ "github.com/hackersguildco/matchserver/utils"
+	"github.com/hackersguildco/matchserver/ws"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"

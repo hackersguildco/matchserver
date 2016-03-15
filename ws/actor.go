@@ -3,7 +3,7 @@ package ws
 import (
 	"time"
 
-	"github.com/cheersappio/matchserver/utils"
+	"github.com/hackersguildco/matchserver/utils"
 )
 
 const timeAlive = 3
